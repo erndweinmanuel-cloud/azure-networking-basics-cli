@@ -34,6 +34,96 @@ az group create \
   --name rg-networking \
   --location westeurope \
   --output table
+```
+
+---
+
+# Step 2 - Create Virtual Network
+```bash
+az network vnet create \
+  --resource-group rg-networking \
+  --name vnet-main \
+  --address-prefix 10.0.0.0/16 \
+  --location westeurope \
+  --output table
+```
+Why /16?
+- Large address space for future growth (subnets, scaling, services).
+- Best practice in Azure to avoid early re-addressing.
+
+---
+
+# Step 3 Create Subnets
+Subnet 1 - Frontend
+```bash
+az network vnet subnet create \
+  --resource-group rg-networking \
+  --vnet-name vnet-main \
+  --name subnet-frontend \
+  --address-prefix 10.0.1.0/24
+``` 
+
+---
+Subnet 2 - Backend
+```bash
+az network vnet subnet create \
+  --resource-group rg-networking \
+  --vnet-name vnet-main \
+  --name subnet-backend \
+  --address-prefix 10.0.2.0/24
+```
+Why /24?
+- 256 IPs per Subnet
+- Azure reserves 5 -> 251 usable IPs
+- Clean separation & easy scaling
+
+---
+
+# Step 4 - Deploy VM into Frontend Subnet
+```bash
+az vm create \
+  --resource-group rg-networking \
+  --name vm-frontend01 \
+  --image Ubuntu2204 \
+  --size Standard_B2s \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --vnet-name vnet-main \
+  --subnet subnet-frontend \
+  --public-ip-sku Standard \
+  --output table
+```
+
+---
+
+# Step 5 Deploy VM into Backend Subnet
+```
+az vm create \
+  --resource-group rg-networking \
+  --name vm-backend01 \
+  --image Ubuntu2204 \
+  --size Standard_B2s \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --vnet-name vnet-main \
+  --subnet subnet-backend \
+  --public-ip-sku Standard \
+  --output table
+```
+
+---
+
+# Step 6 - Verify Network Placement
+```bash
+az vm list-ip-addresses \
+  --resource-group rg-networking \
+  --output table
+```
+
+
+
+
+
 
 
             
