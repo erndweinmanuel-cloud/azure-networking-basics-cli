@@ -120,6 +120,44 @@ az vm list-ip-addresses \
   --output table
 ```
 
+**Proof - Verify Placement**
+
+<img width="482" height="76" alt="Screenshot 2025-12-28 185325" src="https://github.com/user-attachments/assets/5ea69e9b-d562-4de7-ac5e-4976817b811f" />
+
+
+---
+
+Cleanup (optional)
+```bash
+az group delete \
+  --name rg-networking \
+  --yes \
+  --no-wait
+```
+
+---
+
+## Learnings
+
+- Azure IP planning (/16 VNet + /24 subnets)
+- CLI-based network creation
+- Subnet isolation & design
+- Deploying VMs into specific subnets
+
+- Foundation for:
+- NSGs
+- Bastion
+- Load Balancers
+- VM Scale Sets
+
+## Next Steps
+
+- Add Network Security Groups (NSG)
+- Restrict traffic between subnets
+- Remove public IP from backend VM
+- Introduce Azure Bastion
+- Combine with VMSS & Load Balancer
+
 
 
 
