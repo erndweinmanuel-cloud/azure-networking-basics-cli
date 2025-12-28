@@ -24,7 +24,7 @@ It is part of my AZ-104 learning path and serves as the foundation for later pro
 
 ---
 
-## Section 1 - Build Virtual Netzwork & Subnets and deploy Virtual Machines into specific Subnets
+## Section 1 - Section 1 – Build Virtual Network, Subnets and deploy VMs into specific subnets
 
 ---
 
@@ -110,6 +110,10 @@ az vm create \
   --public-ip-sku Standard \
   --output table
 ```
+Note:
+In a real-world setup, backend VMs would not have a public IP
+and would only be reachable via Bastion, Load Balancer or private access.
+This is intentionally simplified for learning purposes.
 
 ---
 
