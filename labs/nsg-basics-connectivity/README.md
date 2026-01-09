@@ -30,7 +30,7 @@ sudo apt install -y nginx
 sudo systemctl enable --now nginx
 ```
 
-## Step 1 – Inter-VM baseline (Video 84)
+## Step 1 – Inter-VM baseline 
 On `db`:
 ```bash
 curl -m 3 -I http://10.0.0.4
@@ -45,7 +45,7 @@ Actual:
 Proof:
 - `proofs/nsg-basics-connectivity/01_intervm_curl.txt`
 
-## Step 2 – Priorities / rule order proof (Video 83)
+## Step 2 – Priorities / rule order proof 
 Target: `nsg-web` (Inbound, subnet scope)
 
 Rules (Inbound):
@@ -67,7 +67,7 @@ Proof:
 - `proofs/nsg-basics-connectivity/02_web_inbound_rules.txt`
 - `proofs/nsg-basics-connectivity/03_priority_allow_wins.txt`
 
-## Step 3 – Outbound rules / DenyAll impact (Video 85)
+## Step 3 – Outbound rules / DenyAll impact 
 Target: `nsg-db` (Outbound, subnet scope)
 
 Rules (Outbound):
@@ -93,7 +93,7 @@ Proof:
 - `proofs/nsg-basics-connectivity/05_outbound_denyall_fail.txt`
 - `proofs/nsg-basics-connectivity/06_allow_vnet_ok.txt`
 
-## Step 4 – ICMP / ping (Video 86)
+## Step 4 – ICMP / ping 
 Target: `nsg-web` inbound (subnet scope)
 
 Rule (Inbound):
