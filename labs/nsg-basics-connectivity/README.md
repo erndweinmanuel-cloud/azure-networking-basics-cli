@@ -9,15 +9,18 @@ Goal: Prove how NSG rule evaluation works in practice (AZ-104 networking fundame
 - ICMP (ping) allow/deny
 
 ## Environment
-- Resource Group: `rg-________`
-- VNet: `vnet-________` (Address space: `10.0.0.0/16`)
+- Resource Group: `rg-nsg-lab`
+- Region: `westeurope`
+- VNet: `vnet-nsg-lab` (Address space: `10.0.0.0/16`)
 - Subnets:
-  - web-subnet: `10.0.0.0/24`
-  - db-subnet:  `10.0.1.0/24`
+  - web-subnet: `10.0.0.0/24` (Subnet NSG: `nsg-web`)
+  - db-subnet:  `10.0.1.0/24` (Subnet NSG: `nsg-db`)
 - VMs (Linux):
-  - `web` (WEB_IP: `10.0.0.__`)
-  - `db`  (DB_IP:  `10.0.1.__`)
-- Access: SSH (no Bastion required for this lab)
+  - `web` (WEB_IP: `10.0.0.4`)
+  - `db`  (DB_IP:  `10.0.1.4`)
+- Access:
+  - SSH to DB used for testing (public IP existed during lab)
+  - Tests executed on DB via SSH + curl/ping
 
 ## Step 0 – Prepare workload
 On `web`:
@@ -30,109 +33,86 @@ sudo systemctl enable --now nginx
 ## Step 1 – Inter-VM baseline (Video 84)
 On `db`:
 ```bash
-curl -m 3 http://WEB_IP
+curl -m 3 -I http://10.0.0.4
 ```
 
 Expected:
 - OK (nginx response)
 
 Actual:
-- [ ] OK
-- [ ] FAIL (reason: ________)
+- [x] OK (HTTP/1.1 200 OK)
 
 Proof:
-- `proofs/nsg-basics-connectivity/01_intervm_curl.png`
+- `proofs/nsg-basics-connectivity/01_intervm_curl.txt`
 
 ## Step 2 – Priorities / rule order proof (Video 83)
-Target: `web` inbound NSG (Subnet or NIC)
+Target: `nsg-web` (Inbound, subnet scope)
 
 Rules (Inbound):
-1) Allow TCP 80 from DB -> WEB (Priority 100)
-2) Deny  TCP 80 from VirtualNetwork -> WEB (Priority 200)
+1) Allow TCP 80 from DB -> WEB (Priority 100) ✅
+2) Deny  TCP 80 from VirtualNetwork -> WEB (Priority 200) ✅
 
 Test on `db`:
 ```bash
-curl -m 3 http://WEB_IP
+curl -m 3 -I http://10.0.0.4
 ```
 
 Expected:
 - OK (Allow 100 wins)
 
-Optional negative test:
-- Change Deny priority to 50 -> expected FAIL
+Actual:
+- [x] OK (HTTP/1.1 200 OK)
 
 Proof:
-- `proofs/nsg-basics-connectivity/02_web_inbound_rules.png`
-- `proofs/nsg-basics-connectivity/03_priority_allow_wins.png`
-- (optional) `proofs/nsg-basics-connectivity/04_priority_deny_wins.png`
+- `proofs/nsg-basics-connectivity/02_web_inbound_rules.txt`
+- `proofs/nsg-basics-connectivity/03_priority_allow_wins.txt`
 
 ## Step 3 – Outbound rules / DenyAll impact (Video 85)
-Target: `db` outbound NSG (Subnet or NIC)
+Target: `nsg-db` (Outbound, subnet scope)
 
 Rules (Outbound):
-1) DenyAllTraffic Any->Any (Priority 400)
+1) DenyAllTraffic Any->Any (Priority 400) ✅
+2) Allow VirtualNetwork (Priority 100) ✅
 
-Tests on `db`:
+Tests on `db` (DenyAll only):
 ```bash
-curl -m 3 http://WEB_IP || echo "VNet blocked"
-curl -I https://example.com || echo "Internet blocked"
+curl -m 3 -I http://10.0.0.4 >/dev/null 2>&1 && echo VNet_OK || echo VNet_blocked
+curl -m 5 -I https://example.com >/dev/null 2>&1 && echo Internet_OK || echo Internet_blocked
 ```
 
-Expected:
-- VNet FAIL
-- Internet FAIL
+Actual (DenyAll only):
+- VNet_blocked ✅
+- Internet_blocked ✅
 
-Fix:
-2) Allow VirtualNetwork (Priority 100)
-
-Re-test:
-```bash
-curl -m 3 http://WEB_IP
-curl -I https://example.com || echo "Internet still blocked"
-```
-
-Expected:
-- VNet OK
-- Internet still FAIL
-
-Optional:
-3) Allow Internet 443 (Priority 110)
-```bash
-curl -I https://example.com
-```
-Expected:
-- Internet OK
+Re-test after Allow VirtualNetwork (prio 100):
+- VNet_OK ✅
+- Internet_blocked ✅
 
 Proof:
-- `proofs/nsg-basics-connectivity/05_db_outbound_rules.png`
-- `proofs/nsg-basics-connectivity/06_outbound_denyall_fail.png`
-- `proofs/nsg-basics-connectivity/07_allow_vnet_ok.png`
-- (optional) `proofs/nsg-basics-connectivity/08_allow_internet_443_ok.png`
+- `proofs/nsg-basics-connectivity/04_db_outbound_rules.txt`
+- `proofs/nsg-basics-connectivity/05_outbound_denyall_fail.txt`
+- `proofs/nsg-basics-connectivity/06_allow_vnet_ok.txt`
 
 ## Step 4 – ICMP / ping (Video 86)
-Target: `web` inbound NSG
+Target: `nsg-web` inbound (subnet scope)
 
 Rule (Inbound):
-- Allow ICMP from DB -> WEB (Priority 120)
+- Allow ICMP from DB -> WEB (Priority 120) ✅
 
 Test on `db`:
 ```bash
-ping -c 2 WEB_IP
+ping -c 2 10.0.0.4 && echo PING_OK || echo PING_BLOCKED
 ```
 
-Expected:
-- OK
-
-Optional:
-- Remove/deny ICMP -> expected FAIL
+Actual:
+- [x] PING_OK (2/2 received)
 
 Proof:
-- `proofs/nsg-basics-connectivity/09_icmp_allow_ping_ok.png`
-- (optional) `proofs/nsg-basics-connectivity/10_icmp_deny_ping_fail.png`
+- `proofs/nsg-basics-connectivity/07_icmp_allow_ping_ok.txt`
 
 ## Results / Key takeaways
 - Lowest priority number is evaluated first (first match wins).
-- NSG evaluation is effectively “most restrictive wins” across NIC/Subnet scope.
+- Subnet NSG + NIC NSG both apply; easiest lab setup is to keep logic in Subnet NSGs.
 - Outbound DenyAll (Any->Any) blocks both Internet and VNet unless VirtualNetwork is explicitly allowed.
 - ICMP is separate from TCP/UDP and must be explicitly allowed for ping.
 
