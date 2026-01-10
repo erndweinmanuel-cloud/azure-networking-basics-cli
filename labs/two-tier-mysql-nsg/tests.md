@@ -6,11 +6,12 @@ curl -m 5 -I https://example.com >/dev/null 2>&1 && echo Internet_OK || echo Int
 
 Expected: Internet_blocked
 Actual: Internet_blocked
-Proof: proofs/two-tier-mysql-nsg/05_test_db_internet_blocked.png
+Proof: [two-tier-mysql-nsg/05_test_db_internet_blocked.png](../../proofs/two-tier-mysql-nsg/05_test_db_internet_blocked.png)
 
 ## Test 2 – Internet blocked from Web
 curl -m 5 -I https://example.com >/dev/null 2>&1 && echo Internet_OK || echo Internet_blocked
 
 Expected: Internet_blocked
 Actual: Internet_blocked
-Proof: proofs/two-tier-mysql-nsg/06_test_web_internet_blocked.png
+Proof: [two-tier-mysql-nsg/06_test_web_internet_blocked.png](../../proofs/two-tier-mysql-nsg/06_test_web_internet_blocked.png)
+
